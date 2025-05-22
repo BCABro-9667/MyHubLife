@@ -58,7 +58,7 @@ export function AppSidebar() {
     try {
       await signOut(auth);
       toast({ title: "Logged Out", description: "You have been successfully logged out." });
-      router.push('/login');
+      router.push('/'); // Redirect to home page
     } catch (error) {
       console.error("Logout failed:", error);
       toast({ title: "Logout Failed", description: "Could not log you out. Please try again.", variant: "destructive" });
@@ -126,7 +126,7 @@ export function AppSidebar() {
                      <Button variant="ghost" 
                         className={cn(
                             "w-full justify-start group-data-[collapsible=icon]:w-auto group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-2",
-                            {"group-data-[collapsible=expanded]:hidden": true} // Hide if expanded - logic might need refinement based on exact Sidebar behavior
+                            {"group-data-[collapsible=expanded]:hidden": true} 
                         )}
                         aria-label="Toggle theme"
                      >
