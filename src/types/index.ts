@@ -1,9 +1,12 @@
 
+
 export interface Todo {
-  id: string;
+  id: string; // Corresponds to MongoDB's _id as a string
   task: string;
   completed: boolean;
   createdAt: string;
+  userId: string; // To associate todo with a user
+  _id?: string; // Optional, as it will be mapped to id. MongoDB driver might return this.
 }
 
 export interface PasswordEntry {
@@ -76,5 +79,5 @@ export interface Album {
 }
 
 // Union type for AI suggestions
-export type SuggestibleContent = Todo | Plan | Story;
+export type SuggestibleContent = Todo | Plan | Story; // Todo will now come from DB
 export type SuggestibleType = 'todo' | 'plan' | 'story';

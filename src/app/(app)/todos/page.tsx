@@ -1,78 +1,139 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
-import { PlusCircle, Edit3, Trash2, CheckSquare, Square, Sparkles, ListChecks } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { PlusCircle, Edit3, Trash2, ListChecks, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
-import { useLocalStorage } from '@/lib/localStorage';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import type { Todo } from '@/types';
 import AppHeader from '@/components/layout/app-header';
 import { EmptyState } from '@/components/empty-state';
-import { AISuggestionModal } from '@/components/ai/ai-suggestion-modal';
+// AISuggestionModal and Sparkles might be removed or adapted later if they rely on LocalStorage for todos
+// For now, AISuggestionModal is removed as it uses LocalStorage source for suggestions.
+// import { AISuggestionModal } from '@/components/ai/ai-suggestion-modal';
+// import { Sparkles } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useAuth } from '@/contexts/auth-context'; // Import useAuth
+import { useAuth } from '@/contexts/auth-context';
+import { useToast } from "@/hooks/use-toast";
 
 export default function TodosPage() {
-  const { userId, loading: authLoading } = useAuth(); // Get userId
-  const [todos, setTodos] = useLocalStorage<Todo[]>('todos', [], userId); // Pass userId
+  const { userId, loading: authLoading } = useAuth();
+  const { toast } = useToast();
+  const [todos, setTodos] = useState<Todo[]>([]);
   const [newTodoTask, setNewTodoTask] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
   const [editedTask, setEditedTask] = useState('');
-  const [isAISuggestionModalOpen, setIsAISuggestionModalOpen] = useState(false);
+  // const [isAISuggestionModalOpen, setIsAISuggestionModalOpen] = useState(false); // Removed for now
+  const [isLoading, setIsLoading] = useState(true); // For initial data load
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Prevent operations if userId is not yet available (during initial auth load)
-  // The (app)/layout should handle redirect if not logged in.
-  // This is an additional safeguard.
   const canOperate = mounted && !authLoading && !!userId;
 
+  const fetchTodos = useCallback(async () => {
+    if (!userId) return;
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/todos?userId=${userId}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch todos');
+      }
+      const data: Todo[] = await response.json();
+      setTodos(data);
+    } catch (error) {
+      console.error("Error fetching todos:", error);
+      toast({ title: "Error", description: (error as Error).message || "Could not fetch todos.", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userId, toast]);
 
-  const handleAddTodo = () => {
+  useEffect(() => {
+    if (canOperate) {
+      fetchTodos();
+    } else if (!authLoading && !userId) {
+      // User logged out, clear todos
+      setTodos([]);
+      setIsLoading(false);
+    }
+  }, [canOperate, fetchTodos, authLoading, userId]);
+
+  const handleAddTodo = async () => {
     if (!canOperate || newTodoTask.trim() === '') return;
-    const newTodo: Todo = {
-      id: crypto.randomUUID(),
-      task: newTodoTask.trim(),
-      completed: false,
-      createdAt: new Date().toISOString(),
-    };
-    setTodos([...todos, newTodo]);
-    setNewTodoTask('');
-    setIsAddModalOpen(false);
+    try {
+      const response = await fetch('/api/todos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ task: newTodoTask.trim(), userId, completed: false }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to add todo');
+      }
+      const newTodo: Todo = await response.json();
+      setTodos(prevTodos => [newTodo, ...prevTodos].sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+      setNewTodoTask('');
+      setIsAddModalOpen(false);
+      toast({ title: "Success", description: "Todo added!" });
+    } catch (error) {
+      console.error("Error adding todo:", error);
+      toast({ title: "Error", description: (error as Error).message || "Could not add todo.", variant: "destructive" });
+    }
   };
   
-  const handleAddSuggestedTodo = (task: string) => {
+  // const handleAddSuggestedTodo = (task: string) => { // Removed for now
+  //   // This would need to call the API similar to handleAddTodo
+  // };
+
+  const toggleTodoCompletion = async (id: string) => {
     if (!canOperate) return;
-    const newTodo: Todo = {
-      id: crypto.randomUUID(),
-      task: task,
-      completed: false,
-      createdAt: new Date().toISOString(),
-    };
-    setTodos(prevTodos => [...prevTodos, newTodo]);
+    const todoToUpdate = todos.find(todo => todo.id === id);
+    if (!todoToUpdate) return;
+
+    try {
+      const response = await fetch(`/api/todos/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ completed: !todoToUpdate.completed, userId }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update todo');
+      }
+      const updatedTodo: Todo = await response.json();
+      setTodos(prevTodos => prevTodos.map(todo => todo.id === id ? updatedTodo : todo)
+        .sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+    } catch (error) {
+      console.error("Error toggling todo:", error);
+      toast({ title: "Error", description: (error as Error).message || "Could not update todo.", variant: "destructive" });
+    }
   };
 
-  const toggleTodoCompletion = (id: string) => {
+  const handleDeleteTodo = async (id: string) => {
     if (!canOperate) return;
-    setTodos(
-      todos.map((todo) =>
-        todo.id === id ? { ...todo, completed: !todo.completed } : todo
-      )
-    );
-  };
-
-  const handleDeleteTodo = (id: string) => {
-    if (!canOperate) return;
-    setTodos(todos.filter((todo) => todo.id !== id));
+    try {
+      const response = await fetch(`/api/todos/${id}?userId=${userId}`, { // Pass userId in query for DELETE
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete todo');
+      }
+      setTodos(prevTodos => prevTodos.filter(todo => todo.id !== id));
+      toast({ title: "Success", description: "Todo deleted." });
+    } catch (error) {
+      console.error("Error deleting todo:", error);
+      toast({ title: "Error", description: (error as Error).message || "Could not delete todo.", variant: "destructive" });
+    }
   };
 
   const openEditModal = (todo: Todo) => {
@@ -82,49 +143,69 @@ export default function TodosPage() {
     setIsEditModalOpen(true);
   };
 
-  const handleEditTodo = () => {
+  const handleEditTodo = async () => {
     if (!canOperate || !editingTodo || editedTask.trim() === '') return;
-    setTodos(
-      todos.map((todo) =>
-        todo.id === editingTodo.id ? { ...todo, task: editedTask.trim() } : todo
-      )
-    );
-    setIsEditModalOpen(false);
-    setEditingTodo(null);
+    try {
+      const response = await fetch(`/api/todos/${editingTodo.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ task: editedTask.trim(), userId }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to edit todo');
+      }
+      const updatedTodo: Todo = await response.json();
+      setTodos(prevTodos => prevTodos.map(todo => todo.id === editingTodo.id ? updatedTodo : todo)
+        .sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+      setIsEditModalOpen(false);
+      setEditingTodo(null);
+      toast({ title: "Success", description: "Todo updated." });
+    } catch (error) {
+      console.error("Error editing todo:", error);
+      toast({ title: "Error", description: (error as Error).message || "Could not edit todo.", variant: "destructive" });
+    }
   };
 
-  if (!mounted || authLoading) { // Show loading if not mounted or auth is loading
+  if (!mounted || authLoading || (isLoading && !todos.length)) {
     return (
       <div className="flex flex-col h-full">
         <AppHeader title="Todos" />
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 flex items-center justify-center">
-          <ListChecks className="h-16 w-16 text-muted-foreground animate-pulse" />
+          <Loader2 className="h-16 w-16 animate-spin text-primary" />
         </main>
       </div>
     );
   }
   
-  // If canOperate becomes false after mount (e.g. user logs out, though layout should redirect),
-  // you might want to show a specific message or empty state here too.
-  // However, the (app)/layout protection should make this scenario rare for this page.
-
   return (
     <div className="flex flex-col h-full">
       <AppHeader title="Todos">
-        <Button onClick={() => setIsAISuggestionModalOpen(true)} variant="outline" size="sm" disabled={!canOperate}>
+        {/* <Button onClick={() => setIsAISuggestionModalOpen(true)} variant="outline" size="sm" disabled={!canOperate}>
           <Sparkles className="mr-2 h-4 w-4" /> AI Suggest
-        </Button>
+        </Button> */}
         <Button onClick={() => setIsAddModalOpen(true)} size="sm" disabled={!canOperate}>
           <PlusCircle className="mr-2 h-4 w-4" /> Add Todo
         </Button>
       </AppHeader>
 
       <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-        {!canOperate || todos.length === 0 ? ( // Check canOperate for empty state too
+        {isLoading && todos.length === 0 ? (
+           <div className="flex items-center justify-center h-full">
+             <Loader2 className="h-12 w-12 animate-spin text-primary" />
+           </div>
+        ) : !isLoading && !canOperate && todos.length === 0 ? (
           <EmptyState
             IconComponent={ListChecks}
-            title={!canOperate ? "Loading Todos..." : "No Todos Yet"}
-            description={!canOperate ? "Please wait." : "Get started by adding your first task or get suggestions from AI."}
+            title={"Login to see Todos"}
+            description={"Please login to manage your tasks."}
+          />
+        )
+        : !isLoading && canOperate && todos.length === 0 ? (
+          <EmptyState
+            IconComponent={ListChecks}
+            title={"No Todos Yet"}
+            description={"Get started by adding your first task."}
             actionButtonText="Add Your First Todo"
             onActionClick={() => setIsAddModalOpen(true)}
             actionButtonDisabled={!canOperate}
@@ -135,7 +216,7 @@ export default function TodosPage() {
               <CardTitle>Your Tasks</CardTitle>
             </CardHeader>
             <CardContent>
-              <ScrollArea className="h-[calc(100vh-220px)]"> {/* Adjust height as needed */}
+              <ScrollArea className="h-[calc(100vh-220px)]">
                 <ul className="space-y-3">
                   {todos.map((todo) => (
                     <li
@@ -175,7 +256,6 @@ export default function TodosPage() {
         )}
       </main>
 
-      {/* Add Todo Modal */}
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
         <DialogContent>
           <DialogHeader>
@@ -199,7 +279,6 @@ export default function TodosPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Todo Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent>
           <DialogHeader>
@@ -222,14 +301,16 @@ export default function TodosPage() {
         </DialogContent>
       </Dialog>
 
-      {/* AI Suggestion Modal */}
+      {/* 
+      AI Suggestion Modal is removed for now as its data source logic needs to be updated for MongoDB.
       <AISuggestionModal
         isOpen={isAISuggestionModalOpen}
         onOpenChange={setIsAISuggestionModalOpen}
-        existingItems={todos}
+        existingItems={todos} // This needs to be adapted if AISuggestionModal expects specific local storage structure
         itemType="todo"
-        onAddSuggestion={handleAddSuggestedTodo}
-      />
+        onAddSuggestion={handleAddSuggestedTodo} // This also needs to use the API
+      /> 
+      */}
     </div>
   );
 }
