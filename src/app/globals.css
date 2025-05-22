@@ -9,96 +9,96 @@ body {
 @layer base {
   :root {
     --background: 0 0% 100%; /* Pure White */
-    --foreground: 130 50% 20%; /* Dark Green for text */
+    --foreground: 225 60% 25%; /* Dark Royal Blue for text */
 
-    --card: 0 0% 97%; /* Very light gray/off-white for cards */
-    --card-foreground: 130 50% 20%; /* Dark Green text on cards */
+    --card: 225 60% 97%; /* Very light blue/off-white for cards */
+    --card-foreground: 225 60% 25%; /* Dark Royal Blue text on cards */
 
-    --popover: 0 0% 97%;
-    --popover-foreground: 130 50% 20%;
+    --popover: 225 60% 97%;
+    --popover-foreground: 225 60% 25%;
 
-    --primary: 130 55% 40%; /* Main Green for buttons, icons */
-    --primary-foreground: 0 0% 100%; /* White text on green buttons */
+    --primary: 225 70% 50%; /* Royal Blue for buttons, icons */
+    --primary-foreground: 0 0% 100%; /* White text on blue buttons */
 
-    --secondary: 130 40% 92%; /* Very Light Green for secondary elements */
-    --secondary-foreground: 130 45% 30%; /* Darker Green text on secondary */
+    --secondary: 225 60% 92%; /* Very Light Royal Blue for secondary elements */
+    --secondary-foreground: 225 60% 35%; /* Darker Royal Blue text on secondary */
 
-    --muted: 130 30% 95%; /* Extremely Light Green for muted backgrounds */
-    --muted-foreground: 130 30% 50%; /* Muted Green text */
+    --muted: 225 50% 96%; /* Extremely Light Royal Blue for muted backgrounds */
+    --muted-foreground: 225 40% 60%; /* Muted Royal Blue text */
 
-    --accent: 130 60% 50%; /* Brighter Green for accents */
+    --accent: 225 75% 60%; /* Brighter Royal Blue for accents */
     --accent-foreground: 0 0% 100%; /* White text on accent */
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 130 30% 88%; /* Light Green border */
-    --input: 0 0% 98%; /* Off-white input bg, rely on border for green hint */
-    --ring: 130 55% 40%; /* Main Green for ring */
+    --border: 225 50% 88%; /* Light Royal Blue/Gray border */
+    --input: 225 50% 98%; /* Off-white/very light blue input bg */
+    --ring: 225 70% 50%; /* Royal Blue for ring */
 
-    --chart-1: 130 55% 40%;
-    --chart-2: 130 60% 50%;
-    --chart-3: 130 45% 30%;
-    --chart-4: 130 65% 60%;
-    --chart-5: 130 35% 45%;
+    --chart-1: 225 70% 50%;
+    --chart-2: 225 75% 60%;
+    --chart-3: 225 60% 40%;
+    --chart-4: 225 80% 70%;
+    --chart-5: 225 50% 45%;
     
     --radius: 0.5rem;
 
     /* Sidebar specific colors */
-    --sidebar-background: 130 40% 96%; /* Very light green, almost white */
-    --sidebar-foreground: 130 50% 20%; /* Dark Green */
-    --sidebar-primary: 130 55% 40%;    /* Main Green */
+    --sidebar-background: 225 60% 96%; /* Very light blue, almost white */
+    --sidebar-foreground: 225 60% 25%; /* Dark Royal Blue */
+    --sidebar-primary: 225 70% 50%;    /* Royal Blue */
     --sidebar-primary-foreground: 0 0% 100%; /* White */
-    --sidebar-accent: 130 50% 90%;     /* Very light green for hover */
-    --sidebar-accent-foreground: 130 50% 25%; /* Darker green for text on hover */
-    --sidebar-border: 130 40% 88%;     /* Light green border */
-    --sidebar-ring: 130 55% 40%;       /* Main Green */
+    --sidebar-accent: 225 60% 90%;     /* Very light blue for hover */
+    --sidebar-accent-foreground: 225 60% 30%; /* Darker blue for text on hover */
+    --sidebar-border: 225 50% 88%;     /* Light blue border */
+    --sidebar-ring: 225 70% 50%;       /* Royal Blue */
   }
 
   .dark {
-    --background: 130 15% 10%; /* Very Dark Green */
-    --foreground: 130 30% 90%; /* Light Green/Off-white text */
+    --background: 225 20% 12%; /* Very Dark Blue */
+    --foreground: 225 50% 90%; /* Light Blue/Off-white text */
 
-    --card: 130 15% 14%; /* Slightly lighter dark green for cards */
-    --card-foreground: 130 30% 90%;
+    --card: 225 20% 16%; /* Slightly lighter dark blue for cards */
+    --card-foreground: 225 50% 90%;
 
-    --popover: 130 15% 12%;
-    --popover-foreground: 130 30% 90%;
+    --popover: 225 20% 14%;
+    --popover-foreground: 225 50% 90%;
 
-    --primary: 130 50% 55%; /* Brighter Green for dark mode buttons */
-    --primary-foreground: 130 30% 10%; /* Very dark green text for contrast */
+    --primary: 225 70% 60%; /* Brighter Royal Blue for dark mode buttons */
+    --primary-foreground: 0 0% 100%; /* White text for contrast */
 
-    --secondary: 130 25% 25%; /* Darker muted green */
-    --secondary-foreground: 130 30% 80%;
+    --secondary: 225 30% 28%; /* Darker muted blue */
+    --secondary-foreground: 225 40% 80%;
 
-    --muted: 130 20% 20%; /* Even darker muted green */
-    --muted-foreground: 130 25% 65%;
+    --muted: 225 25% 22%; /* Even darker muted blue */
+    --muted-foreground: 225 30% 65%;
 
-    --accent: 130 55% 65%; /* Lighter accent green for dark mode */
-    --accent-foreground: 130 30% 10%;
+    --accent: 225 75% 70%; /* Lighter accent blue for dark mode */
+    --accent-foreground: 225 20% 10%; /* Very dark blue text on accent */
 
-    --destructive: 0 70% 50%;
+    --destructive: 0 62.8% 50.6%; /* Adjusted destructive for dark mode */
     --destructive-foreground: 0 0% 98%;
 
-    --border: 130 20% 30%; /* Muted green border */
-    --input: 130 20% 22%; /* Dark green input bg */
-    --ring: 130 50% 55%; /* Brighter Green for ring */
+    --border: 225 25% 35%; /* Muted blue border */
+    --input: 225 25% 25%; /* Dark blue input bg */
+    --ring: 225 70% 60%; /* Brighter Royal Blue for ring */
 
-    --chart-1: 130 50% 55%;
-    --chart-2: 130 55% 65%;
-    --chart-3: 130 40% 45%;
-    --chart-4: 130 60% 75%;
-    --chart-5: 130 30% 60%;
+    --chart-1: 225 70% 60%;
+    --chart-2: 225 75% 70%;
+    --chart-3: 225 60% 50%;
+    --chart-4: 225 80% 80%;
+    --chart-5: 225 50% 55%;
 
     /* Sidebar specific colors */
-    --sidebar-background: 130 15% 18%; /* Slightly lighter dark green for sidebar */
-    --sidebar-foreground: 130 30% 85%; /* Light Green/Off-white text */
-    --sidebar-primary: 130 50% 55%;    /* Brighter Green */
-    --sidebar-primary-foreground: 130 30% 10%; /* Very dark green text */
-    --sidebar-accent: 130 20% 25%;     /* Muted dark green for hover */
-    --sidebar-accent-foreground: 130 30% 80%; /* Light green text on hover */
-    --sidebar-border: 130 15% 20%;     /* Dark green border */
-    --sidebar-ring: 130 50% 55%;       /* Brighter Green */
+    --sidebar-background: 225 20% 20%; /* Slightly lighter dark blue for sidebar */
+    --sidebar-foreground: 225 50% 85%; /* Light Blue/Off-white text */
+    --sidebar-primary: 225 70% 60%;    /* Brighter Royal Blue */
+    --sidebar-primary-foreground: 0 0% 100%; /* White text */
+    --sidebar-accent: 225 25% 30%;     /* Muted dark blue for hover */
+    --sidebar-accent-foreground: 225 50% 80%; /* Light blue text on hover */
+    --sidebar-border: 225 20% 25%;     /* Dark blue border */
+    --sidebar-ring: 225 70% 60%;       /* Brighter Royal Blue */
   }
 }
 
