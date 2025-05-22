@@ -8,7 +8,7 @@ import { auth } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Sparkles, LogIn, Chrome } from 'lucide-react';
+import { Sparkles, LogIn, Mail } from 'lucide-react'; // Changed Chrome to Mail
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from '@/components/ui/separator';
 
@@ -116,7 +116,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
         onClick={handleGoogleSignIn}
         disabled={isLoading || isGoogleLoading}
       >
-        {isGoogleLoading ? 'Signing in...' : <><Chrome className="mr-2 h-4 w-4" /> Sign In with Google</>}
+        {isGoogleLoading ? 'Signing in...' : <><Mail className="mr-2 h-4 w-4" /> Log In with Gmail</>}
       </Button>
 
       {onSwitchToRegister && (

@@ -8,7 +8,7 @@ import { auth } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { UserPlus, Chrome } from 'lucide-react';
+import { UserPlus, Mail } from 'lucide-react'; // Changed Chrome to Mail
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from '@/components/ui/separator';
 
@@ -130,7 +130,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
         onClick={handleGoogleSignUp}
         disabled={isLoading || isGoogleLoading}
       >
-        {isGoogleLoading ? 'Signing up...' : <><Chrome className="mr-2 h-4 w-4" /> Sign Up with Google</>}
+        {isGoogleLoading ? 'Signing up...' : <><Mail className="mr-2 h-4 w-4" /> Sign Up with Gmail</>}
       </Button>
 
       {onSwitchToLogin && (

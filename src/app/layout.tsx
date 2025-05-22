@@ -4,6 +4,7 @@ import { Inter } from 'next/font/google'; // Using Inter as a common modern sans
 import './globals.css';
 import { cn } from '@/lib/utils';
 import { AuthProvider } from '@/contexts/auth-context'; // Import AuthProvider
+import { ThemeProvider } from '@/contexts/theme-context'; // Import ThemeProvider
 import { Toaster } from "@/components/ui/toaster"; // Keep Toaster here if it's global
 
 const fontSans = Inter({
@@ -29,10 +30,12 @@ export default function RootLayout({
           fontSans.variable
         )}
       >
-        <AuthProvider> {/* Wrap children with AuthProvider */}
-          {children}
-          <Toaster /> {/* Global Toaster */}
-        </AuthProvider>
+        <ThemeProvider> {/* Wrap AuthProvider with ThemeProvider */}
+          <AuthProvider> {/* Wrap children with AuthProvider */}
+            {children}
+            <Toaster /> {/* Global Toaster */}
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

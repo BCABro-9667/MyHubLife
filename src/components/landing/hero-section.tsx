@@ -3,10 +3,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { ChevronRight } from 'lucide-react';
+import hero from './hero.png'; // use relative path
+
 
 export default function HeroSection() {
   return (
-    <section id="home" className="py-16 md:py-24 lg:py-32 bg-gradient-to-b from-background to-accent/10">
+    <section id="home" className="py-16  bg-gradient-to-b from-background to-accent/10">
       <div className="container mx-auto px-4">
         <div className="grid md:grid-cols-2 gap-8 items-center">
           <div className="text-center md:text-left">
@@ -29,13 +31,13 @@ export default function HeroSection() {
           </div>
           <div className="hidden md:block">
             <Image
-              src="https://placehold.co/600x400.png"
+              src={hero}
               alt="MyLifeHub Dashboard Preview"
               width={600}
               height={400}
-              className="rounded-lg shadow-2xl"
-              priority
-              data-ai-hint="dashboard productivity"
+              // className="rounded-lg shadow-2xl"
+              // priority
+              // data-ai-hint="dashboard productivity"
             />
           </div>
         </div>
