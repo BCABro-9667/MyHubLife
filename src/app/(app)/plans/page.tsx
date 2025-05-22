@@ -1,14 +1,13 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
-import { PlusCircle, Edit3, Trash2, ClipboardList, Sparkles } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { PlusCircle, Edit3, Trash2, ClipboardList, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { useLocalStorage } from '@/lib/localStorage';
 import type { Plan } from '@/types';
 import AppHeader from '@/components/layout/app-header';
 import { EmptyState } from '@/components/empty-state';
@@ -16,9 +15,10 @@ import { AISuggestionModal } from '@/components/ai/ai-suggestion-modal';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useAuth } from '@/contexts/auth-context'; // Import useAuth
+import { useAuth } from '@/contexts/auth-context';
+import { useToast } from "@/hooks/use-toast";
 
-const initialFormState: Omit<Plan, 'id' | 'createdAt'> = {
+const initialFormState: Omit<Plan, 'id' | 'createdAt' | 'userId'> = {
   title: '',
   description: '',
   dueDate: '',
@@ -39,14 +39,15 @@ const priorityColors: Record<NonNullable<Plan['priority']>, string> = {
   'High': 'bg-red-500/20 text-red-700 dark:bg-red-500/30 dark:text-red-400',
 };
 
-
 export default function PlansPage() {
-  const { userId, loading: authLoading } = useAuth(); // Get userId
-  const [plans, setPlans] = useLocalStorage<Plan[]>('plans', [], userId); // Pass userId
+  const { userId, loading: authLoading } = useAuth();
+  const { toast } = useToast();
+  const [plans, setPlans] = useState<Plan[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
-  const [formData, setFormData] = useState(initialFormState);
+  const [formData, setFormData] = useState<Omit<Plan, 'id' | 'createdAt' | 'userId'>>(initialFormState);
   const [isAISuggestionModalOpen, setIsAISuggestionModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -55,52 +56,119 @@ export default function PlansPage() {
 
   const canOperate = mounted && !authLoading && !!userId;
 
+  const fetchPlans = useCallback(async () => {
+    if (!userId) return;
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/plans?userId=${userId}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch plans');
+      }
+      const data: Plan[] = await response.json();
+      setPlans(data);
+    } catch (error) {
+      console.error("Error fetching plans:", error);
+      toast({ title: "Error", description: (error as Error).message || "Could not fetch plans.", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userId, toast]);
+
+  useEffect(() => {
+    if (canOperate) {
+      fetchPlans();
+    } else if (mounted && !authLoading && !userId) {
+      setPlans([]);
+      setIsLoading(false);
+    }
+  }, [canOperate, fetchPlans, authLoading, userId, mounted]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSelectChange = (name: 'status' | 'priority', value: string) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value as Plan['status'] | Plan['priority'] }));
   };
   
-  const handleAddSuggestedPlan = (title: string) => {
-    if (!canOperate) return;
-    const newPlan: Plan = {
-      id: crypto.randomUUID(),
+  const handleAddSuggestedPlan = async (title: string) => {
+    if (!canOperate || !userId) return;
+    const planData = {
       title: title,
       description: "AI Suggested Plan - add more details.",
-      status: 'Not Started',
-      priority: 'Medium',
-      createdAt: new Date().toISOString(),
+      status: 'Not Started' as Plan['status'],
+      priority: 'Medium' as Plan['priority'],
+      userId,
     };
-    setPlans(prevPlans => [...prevPlans, newPlan]);
+    try {
+      const response = await fetch('/api/plans', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(planData),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to add suggested plan');
+      }
+      const newPlan: Plan = await response.json();
+      setPlans(prevPlans => [newPlan, ...prevPlans].sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+      toast({ title: "Success", description: "AI Suggested plan added!" });
+    } catch (error) {
+       console.error("Error adding suggested plan:", error);
+       toast({ title: "Error", description: (error as Error).message || "Could not add suggested plan.", variant: "destructive" });
+    }
   };
 
-  const handleSubmit = () => {
-    if (!canOperate) return;
+  const handleSubmit = async () => {
+    if (!canOperate || !userId) return;
     if (formData.title.trim() === '') {
-      alert("Plan title cannot be empty.");
+      toast({ title: "Validation Error", description: "Plan title cannot be empty.", variant: "destructive" });
       return;
     }
 
-    if (editingPlan) {
-      setPlans(
-        plans.map((plan) =>
-          plan.id === editingPlan.id ? { ...editingPlan, ...formData } : plan
-        )
-      );
-    } else {
-      const newPlan: Plan = {
-        id: crypto.randomUUID(),
-        ...formData,
-        createdAt: new Date().toISOString(),
-      };
-      setPlans([...plans, newPlan]);
+    const planData = { ...formData, userId };
+
+    try {
+      let response;
+      let newOrUpdatedPlan: Plan;
+
+      if (editingPlan) {
+        response = await fetch(`/api/plans/${editingPlan.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(planData), // userId is in planData
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to update plan');
+        }
+        newOrUpdatedPlan = await response.json();
+        setPlans(prevPlans => prevPlans.map(p => p.id === editingPlan.id ? newOrUpdatedPlan : p)
+          .sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+        toast({ title: "Success", description: "Plan updated!" });
+      } else {
+        response = await fetch('/api/plans', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(planData),
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to add plan');
+        }
+        newOrUpdatedPlan = await response.json();
+        setPlans(prevPlans => [newOrUpdatedPlan, ...prevPlans].sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+        toast({ title: "Success", description: "Plan added!" });
+      }
+      setIsModalOpen(false);
+      setFormData(initialFormState);
+      setEditingPlan(null);
+    } catch (error) {
+       console.error("Error submitting plan:", error);
+       toast({ title: "Error", description: (error as Error).message || "Could not save plan.", variant: "destructive" });
     }
-    setIsModalOpen(false);
-    setFormData(initialFormState);
-    setEditingPlan(null);
   };
 
   const openEditModal = (plan: Plan) => {
@@ -123,19 +191,32 @@ export default function PlansPage() {
     setIsModalOpen(true);
   };
 
-  const handleDeletePlan = (id: string) => {
-    if (!canOperate) return;
+  const handleDeletePlan = async (id: string) => {
+    if (!canOperate || !userId) return;
     if (window.confirm("Are you sure you want to delete this plan?")) {
-      setPlans(plans.filter((plan) => plan.id !== id));
+      try {
+        const response = await fetch(`/api/plans/${id}?userId=${userId}`, {
+          method: 'DELETE',
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to delete plan');
+        }
+        setPlans(plans.filter((plan) => plan.id !== id));
+        toast({ title: "Success", description: "Plan deleted." });
+      } catch (error) {
+        console.error("Error deleting plan:", error);
+        toast({ title: "Error", description: (error as Error).message || "Could not delete plan.", variant: "destructive" });
+      }
     }
   };
-
-  if (!mounted || authLoading) {
+  
+  if (!mounted || authLoading || (isLoading && !plans.length && userId)) {
      return (
       <div className="flex flex-col h-full">
         <AppHeader title="My Plans" />
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 flex items-center justify-center">
-          <ClipboardList className="h-16 w-16 text-muted-foreground animate-pulse" />
+          <Loader2 className="h-16 w-16 animate-spin text-primary" />
         </main>
       </div>
     );
@@ -153,11 +234,22 @@ export default function PlansPage() {
       </AppHeader>
 
       <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-        {!canOperate || plans.length === 0 ? (
+        {isLoading && plans.length === 0 && userId ? (
+           <div className="flex items-center justify-center h-full">
+             <Loader2 className="h-12 w-12 animate-spin text-primary" />
+           </div>
+        ) : !isLoading && !canOperate && plans.length === 0 ? (
+           <EmptyState
+            IconComponent={ClipboardList}
+            title={"Login to see Plans"}
+            description={"Please login to manage your plans."}
+          />
+        )
+        : !isLoading && canOperate && plans.length === 0 ? (
           <EmptyState
             IconComponent={ClipboardList}
-            title={!canOperate ? "Loading Plans..." : "No Plans Yet"}
-            description={!canOperate ? "Please wait." : "Outline your goals, projects, or aspirations. Add your first plan or get suggestions from AI."}
+            title={"No Plans Yet"}
+            description={"Outline your goals, projects, or aspirations. Add your first plan or get suggestions from AI."}
             actionButtonText="Add Your First Plan"
             onActionClick={openAddModal}
             actionButtonDisabled={!canOperate}
@@ -169,8 +261,8 @@ export default function PlansPage() {
                 <CardHeader>
                   <CardTitle className="truncate">{plan.title}</CardTitle>
                   <div className="flex flex-wrap gap-2 mt-1">
-                    <Badge variant="outline" className={statusColors[plan.status]}>{plan.status}</Badge>
-                    {plan.priority && <Badge variant="outline" className={priorityColors[plan.priority]}>{plan.priority} Priority</Badge>}
+                    <Badge variant="outline" className={`${statusColors[plan.status]} border-transparent`}>{plan.status}</Badge>
+                    {plan.priority && <Badge variant="outline" className={`${priorityColors[plan.priority]} border-transparent`}>{plan.priority} Priority</Badge>}
                   </div>
                 </CardHeader>
                 <CardContent className="flex-grow space-y-2">
@@ -216,7 +308,7 @@ export default function PlansPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor="status" className="text-sm font-medium">Status</label>
-                <Select name="status" value={formData.status} onValueChange={(value) => handleSelectChange('status', value)}>
+                <Select name="status" value={formData.status} onValueChange={(value) => handleSelectChange('status', value as Plan['status'])}>
                   <SelectTrigger id="status" className="mt-1">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
@@ -230,7 +322,7 @@ export default function PlansPage() {
               </div>
               <div>
                 <label htmlFor="priority" className="text-sm font-medium">Priority</label>
-                <Select name="priority" value={formData.priority} onValueChange={(value) => handleSelectChange('priority', value)}>
+                <Select name="priority" value={formData.priority || 'Medium'} onValueChange={(value) => handleSelectChange('priority', value as Plan['priority'])}>
                   <SelectTrigger id="priority" className="mt-1">
                     <SelectValue placeholder="Select priority" />
                   </SelectTrigger>
@@ -254,9 +346,9 @@ export default function PlansPage() {
       <AISuggestionModal
         isOpen={isAISuggestionModalOpen}
         onOpenChange={setIsAISuggestionModalOpen}
-        existingItems={plans}
+        existingItems={plans} // This provides context to AI, now sourced from API
         itemType="plan"
-        onAddSuggestion={handleAddSuggestedPlan}
+        onAddSuggestion={handleAddSuggestedPlan} // This now calls the API
       />
     </div>
   );

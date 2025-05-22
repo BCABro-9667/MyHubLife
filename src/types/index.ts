@@ -42,13 +42,15 @@ export interface CardInfo {
 }
 
 export interface Plan {
-  id: string;
+  id: string; // Corresponds to MongoDB's _id as a string
   title: string;
   description: string;
   dueDate?: string;
   status: 'Not Started' | 'In Progress' | 'Completed' | 'On Hold';
   priority?: 'Low' | 'Medium' | 'High';
   createdAt: string;
+  userId: string; // To associate plan with a user
+  _id?: string; // Optional, as it will be mapped to id. MongoDB driver might return this.
 }
 
 export interface Story {
@@ -79,5 +81,6 @@ export interface Album {
 }
 
 // Union type for AI suggestions
-export type SuggestibleContent = Todo | Plan | Story; // Todo will now come from DB
+export type SuggestibleContent = Todo | Plan | Story; // Todo and Plan will now come from DB
 export type SuggestibleType = 'todo' | 'plan' | 'story';
+
