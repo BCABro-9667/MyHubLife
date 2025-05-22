@@ -14,9 +14,11 @@ import { EmptyState } from '@/components/empty-state';
 import { AISuggestionModal } from '@/components/ai/ai-suggestion-modal';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useAuth } from '@/contexts/auth-context'; // Import useAuth
 
 export default function TodosPage() {
-  const [todos, setTodos] = useLocalStorage<Todo[]>('todos', []);
+  const { userId, loading: authLoading } = useAuth(); // Get userId
+  const [todos, setTodos] = useLocalStorage<Todo[]>('todos', [], userId); // Pass userId
   const [newTodoTask, setNewTodoTask] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -24,12 +26,19 @@ export default function TodosPage() {
   const [editedTask, setEditedTask] = useState('');
   const [isAISuggestionModalOpen, setIsAISuggestionModalOpen] = useState(false);
 
-  // Hydration-safe state for rendering
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Prevent operations if userId is not yet available (during initial auth load)
+  // The (app)/layout should handle redirect if not logged in.
+  // This is an additional safeguard.
+  const canOperate = mounted && !authLoading && !!userId;
+
 
   const handleAddTodo = () => {
-    if (newTodoTask.trim() === '') return;
+    if (!canOperate || newTodoTask.trim() === '') return;
     const newTodo: Todo = {
       id: crypto.randomUUID(),
       task: newTodoTask.trim(),
@@ -42,6 +51,7 @@ export default function TodosPage() {
   };
   
   const handleAddSuggestedTodo = (task: string) => {
+    if (!canOperate) return;
     const newTodo: Todo = {
       id: crypto.randomUUID(),
       task: task,
@@ -52,6 +62,7 @@ export default function TodosPage() {
   };
 
   const toggleTodoCompletion = (id: string) => {
+    if (!canOperate) return;
     setTodos(
       todos.map((todo) =>
         todo.id === id ? { ...todo, completed: !todo.completed } : todo
@@ -60,17 +71,19 @@ export default function TodosPage() {
   };
 
   const handleDeleteTodo = (id: string) => {
+    if (!canOperate) return;
     setTodos(todos.filter((todo) => todo.id !== id));
   };
 
   const openEditModal = (todo: Todo) => {
+    if (!canOperate) return;
     setEditingTodo(todo);
     setEditedTask(todo.task);
     setIsEditModalOpen(true);
   };
 
   const handleEditTodo = () => {
-    if (!editingTodo || editedTask.trim() === '') return;
+    if (!canOperate || !editingTodo || editedTask.trim() === '') return;
     setTodos(
       todos.map((todo) =>
         todo.id === editingTodo.id ? { ...todo, task: editedTask.trim() } : todo
@@ -80,7 +93,7 @@ export default function TodosPage() {
     setEditingTodo(null);
   };
 
-  if (!mounted) {
+  if (!mounted || authLoading) { // Show loading if not mounted or auth is loading
     return (
       <div className="flex flex-col h-full">
         <AppHeader title="Todos" />
@@ -90,26 +103,31 @@ export default function TodosPage() {
       </div>
     );
   }
+  
+  // If canOperate becomes false after mount (e.g. user logs out, though layout should redirect),
+  // you might want to show a specific message or empty state here too.
+  // However, the (app)/layout protection should make this scenario rare for this page.
 
   return (
     <div className="flex flex-col h-full">
       <AppHeader title="Todos">
-        <Button onClick={() => setIsAISuggestionModalOpen(true)} variant="outline" size="sm">
+        <Button onClick={() => setIsAISuggestionModalOpen(true)} variant="outline" size="sm" disabled={!canOperate}>
           <Sparkles className="mr-2 h-4 w-4" /> AI Suggest
         </Button>
-        <Button onClick={() => setIsAddModalOpen(true)} size="sm">
+        <Button onClick={() => setIsAddModalOpen(true)} size="sm" disabled={!canOperate}>
           <PlusCircle className="mr-2 h-4 w-4" /> Add Todo
         </Button>
       </AppHeader>
 
       <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-        {todos.length === 0 ? (
+        {!canOperate || todos.length === 0 ? ( // Check canOperate for empty state too
           <EmptyState
             IconComponent={ListChecks}
-            title="No Todos Yet"
-            description="Get started by adding your first task or get suggestions from AI."
+            title={!canOperate ? "Loading Todos..." : "No Todos Yet"}
+            description={!canOperate ? "Please wait." : "Get started by adding your first task or get suggestions from AI."}
             actionButtonText="Add Your First Todo"
             onActionClick={() => setIsAddModalOpen(true)}
+            actionButtonDisabled={!canOperate}
           />
         ) : (
           <Card>

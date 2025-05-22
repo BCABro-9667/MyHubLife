@@ -14,6 +14,7 @@ import { EmptyState } from '@/components/empty-state';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useAuth } from '@/contexts/auth-context'; // Import useAuth
 
 const initialFormState: Omit<PasswordEntry, 'id' | 'createdAt'> = {
   websiteName: '',
@@ -24,16 +25,20 @@ const initialFormState: Omit<PasswordEntry, 'id' | 'createdAt'> = {
 };
 
 export default function PasswordsPage() {
-  const [passwords, setPasswords] = useLocalStorage<PasswordEntry[]>('passwords', []);
+  const { userId, loading: authLoading } = useAuth(); // Get userId
+  const [passwords, setPasswords] = useLocalStorage<PasswordEntry[]>('passwords', [], userId); // Pass userId
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPassword, setEditingPassword] = useState<PasswordEntry | null>(null);
   const [formData, setFormData] = useState(initialFormState);
   const [showPassword, setShowPassword] = useState(false);
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
 
-  // Hydration-safe state for rendering
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
+  const canOperate = mounted && !authLoading && !!userId;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -41,8 +46,8 @@ export default function PasswordsPage() {
   };
 
   const handleSubmit = () => {
+    if (!canOperate) return;
     if (formData.websiteName.trim() === '' || formData.username.trim() === '' || formData.passwordValue.trim() === '') {
-      // Basic validation
       alert("Website name, username, and password cannot be empty.");
       return;
     }
@@ -67,6 +72,7 @@ export default function PasswordsPage() {
   };
 
   const openEditModal = (password: PasswordEntry) => {
+    if (!canOperate) return;
     setEditingPassword(password);
     setFormData({
       websiteName: password.websiteName,
@@ -76,31 +82,34 @@ export default function PasswordsPage() {
       notes: password.notes || '',
     });
     setIsModalOpen(true);
-    setShowPassword(false); // Reset visibility in modal
+    setShowPassword(false); 
   };
 
   const openAddModal = () => {
+    if (!canOperate) return;
     setEditingPassword(null);
     setFormData(initialFormState);
     setIsModalOpen(true);
-    setShowPassword(false); // Reset visibility in modal
+    setShowPassword(false); 
   };
 
   const handleDeletePassword = (id: string) => {
+    if (!canOperate) return;
     if (window.confirm("Are you sure you want to delete this password entry?")) {
       setPasswords(passwords.filter((p) => p.id !== id));
     }
   };
   
   const togglePasswordVisibility = (id?: string) => {
-    if (id) { // For list items
+    if (id) { 
       setVisiblePasswords(prev => ({ ...prev, [id]: !prev[id] }));
-    } else { // For modal
+    } else { 
       setShowPassword(!showPassword);
     }
   };
 
   const copyToClipboard = (text: string) => {
+    if (!canOperate) return;
     navigator.clipboard.writeText(text).then(() => {
       alert("Copied to clipboard!");
     }).catch(err => {
@@ -108,7 +117,7 @@ export default function PasswordsPage() {
     });
   };
 
-  if (!mounted) {
+  if (!mounted || authLoading) {
     return (
       <div className="flex flex-col h-full">
         <AppHeader title="Passwords" />
@@ -122,7 +131,7 @@ export default function PasswordsPage() {
   return (
     <div className="flex flex-col h-full">
       <AppHeader title="Passwords">
-        <Button onClick={openAddModal} size="sm">
+        <Button onClick={openAddModal} size="sm" disabled={!canOperate}>
           <PlusCircle className="mr-2 h-4 w-4" /> Add Password
         </Button>
       </AppHeader>
@@ -138,13 +147,14 @@ export default function PasswordsPage() {
           </AlertDescription>
         </Alert>
 
-        {passwords.length === 0 ? (
+        {!canOperate || passwords.length === 0 ? (
           <EmptyState
             IconComponent={Lock}
-            title="No Passwords Saved"
-            description="Keep your website logins organized. Add your first password entry."
+            title={!canOperate ? "Loading Passwords..." : "No Passwords Saved"}
+            description={!canOperate ? "Please wait." : "Keep your website logins organized. Add your first password entry."}
             actionButtonText="Add Password Entry"
             onActionClick={openAddModal}
+            actionButtonDisabled={!canOperate}
           />
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

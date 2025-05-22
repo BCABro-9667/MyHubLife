@@ -16,6 +16,7 @@ import { AISuggestionModal } from '@/components/ai/ai-suggestion-modal';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useAuth } from '@/contexts/auth-context'; // Import useAuth
 
 const initialFormState: Omit<Plan, 'id' | 'createdAt'> = {
   title: '',
@@ -40,14 +41,19 @@ const priorityColors: Record<NonNullable<Plan['priority']>, string> = {
 
 
 export default function PlansPage() {
-  const [plans, setPlans] = useLocalStorage<Plan[]>('plans', []);
+  const { userId, loading: authLoading } = useAuth(); // Get userId
+  const [plans, setPlans] = useLocalStorage<Plan[]>('plans', [], userId); // Pass userId
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
   const [formData, setFormData] = useState(initialFormState);
   const [isAISuggestionModalOpen, setIsAISuggestionModalOpen] = useState(false);
 
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const canOperate = mounted && !authLoading && !!userId;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -59,6 +65,7 @@ export default function PlansPage() {
   };
   
   const handleAddSuggestedPlan = (title: string) => {
+    if (!canOperate) return;
     const newPlan: Plan = {
       id: crypto.randomUUID(),
       title: title,
@@ -71,6 +78,7 @@ export default function PlansPage() {
   };
 
   const handleSubmit = () => {
+    if (!canOperate) return;
     if (formData.title.trim() === '') {
       alert("Plan title cannot be empty.");
       return;
@@ -96,6 +104,7 @@ export default function PlansPage() {
   };
 
   const openEditModal = (plan: Plan) => {
+    if (!canOperate) return;
     setEditingPlan(plan);
     setFormData({
       title: plan.title,
@@ -108,18 +117,20 @@ export default function PlansPage() {
   };
 
   const openAddModal = () => {
+    if (!canOperate) return;
     setEditingPlan(null);
     setFormData(initialFormState);
     setIsModalOpen(true);
   };
 
   const handleDeletePlan = (id: string) => {
+    if (!canOperate) return;
     if (window.confirm("Are you sure you want to delete this plan?")) {
       setPlans(plans.filter((plan) => plan.id !== id));
     }
   };
 
-  if (!mounted) {
+  if (!mounted || authLoading) {
      return (
       <div className="flex flex-col h-full">
         <AppHeader title="My Plans" />
@@ -133,22 +144,23 @@ export default function PlansPage() {
   return (
     <div className="flex flex-col h-full">
       <AppHeader title="My Plans">
-        <Button onClick={() => setIsAISuggestionModalOpen(true)} variant="outline" size="sm">
+        <Button onClick={() => setIsAISuggestionModalOpen(true)} variant="outline" size="sm" disabled={!canOperate}>
           <Sparkles className="mr-2 h-4 w-4" /> AI Suggest
         </Button>
-        <Button onClick={openAddModal} size="sm">
+        <Button onClick={openAddModal} size="sm" disabled={!canOperate}>
           <PlusCircle className="mr-2 h-4 w-4" /> Add Plan
         </Button>
       </AppHeader>
 
       <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-        {plans.length === 0 ? (
+        {!canOperate || plans.length === 0 ? (
           <EmptyState
             IconComponent={ClipboardList}
-            title="No Plans Yet"
-            description="Outline your goals, projects, or aspirations. Add your first plan or get suggestions from AI."
+            title={!canOperate ? "Loading Plans..." : "No Plans Yet"}
+            description={!canOperate ? "Please wait." : "Outline your goals, projects, or aspirations. Add your first plan or get suggestions from AI."}
             actionButtonText="Add Your First Plan"
             onActionClick={openAddModal}
+            actionButtonDisabled={!canOperate}
           />
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

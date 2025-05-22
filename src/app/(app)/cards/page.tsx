@@ -17,6 +17,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { useAuth } from '@/contexts/auth-context'; // Import useAuth
 
 const initialFormState: Omit<CardInfo, 'id' | 'createdAt'> = {
   cardName: '',
@@ -30,14 +31,20 @@ const initialFormState: Omit<CardInfo, 'id' | 'createdAt'> = {
 };
 
 export default function CardsPage() {
-  const [cards, setCards] = useLocalStorage<CardInfo[]>('cards', []);
-  const [passwords] = useLocalStorage<PasswordEntry[]>('passwords', []);
+  const { userId, loading: authLoading } = useAuth(); // Get userId
+  const [cards, setCards] = useLocalStorage<CardInfo[]>('cards', [], userId); // Pass userId
+  // Passwords for association are still read with userId for consistency
+  const [passwords] = useLocalStorage<PasswordEntry[]>('passwords', [], userId); 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<CardInfo | null>(null);
   const [formData, setFormData] = useState<Omit<CardInfo, 'id' | 'createdAt'>>(initialFormState);
 
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const canOperate = mounted && !authLoading && !!userId;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -59,6 +66,7 @@ export default function CardsPage() {
   };
 
   const handleSubmit = () => {
+    if (!canOperate) return;
     if (formData.cardName.trim() === '') {
       alert("Card name cannot be empty.");
       return;
@@ -84,6 +92,7 @@ export default function CardsPage() {
   };
 
   const openEditModal = (card: CardInfo) => {
+    if (!canOperate) return;
     setEditingCard(card);
     setFormData({
       cardName: card.cardName,
@@ -99,12 +108,14 @@ export default function CardsPage() {
   };
 
   const openAddModal = () => {
+    if (!canOperate) return;
     setEditingCard(null);
     setFormData(initialFormState);
     setIsModalOpen(true);
   };
 
   const handleDeleteCard = (id: string) => {
+    if (!canOperate) return;
     if (window.confirm("Are you sure you want to delete this card information?")) {
       setCards(cards.filter((card) => card.id !== id));
     }
@@ -114,7 +125,7 @@ export default function CardsPage() {
     return passwords.find(p => p.id === id);
   };
 
-  if (!mounted) {
+  if (!mounted || authLoading) {
      return (
       <div className="flex flex-col h-full">
         <AppHeader title="Card Safe" />
@@ -128,7 +139,7 @@ export default function CardsPage() {
   return (
     <div className="flex flex-col h-full">
       <AppHeader title="Card Safe">
-        <Button onClick={openAddModal} size="sm">
+        <Button onClick={openAddModal} size="sm" disabled={!canOperate}>
           <PlusCircle className="mr-2 h-4 w-4" /> Add Card Info
         </Button>
       </AppHeader>
@@ -143,13 +154,14 @@ export default function CardsPage() {
           </AlertDescription>
         </Alert>
 
-        {cards.length === 0 ? (
+        {!canOperate || cards.length === 0 ? (
           <EmptyState
             IconComponent={CreditCard}
-            title="No Card Information Saved"
-            description="Keep track of your card-related notes and links. Add your first card information entry."
+            title={!canOperate ? "Loading Card Info..." : "No Card Information Saved"}
+            description={!canOperate ? "Please wait." : "Keep track of your card-related notes and links. Add your first card information entry."}
             actionButtonText="Add Card Info"
             onActionClick={openAddModal}
+            actionButtonDisabled={!canOperate}
           />
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

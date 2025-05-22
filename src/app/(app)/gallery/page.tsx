@@ -14,13 +14,15 @@ import AppHeader from '@/components/layout/app-header';
 import { EmptyState } from '@/components/empty-state';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useAuth } from '@/contexts/auth-context'; // Import useAuth
 
 const initialAlbumFormState: Omit<Album, 'id' | 'createdAt'> = { name: '', description: '', coverImageUrl: '', dataAiHint: 'abstract nature' };
 const initialPhotoFormState: Omit<Photo, 'id' | 'createdAt' | 'albumId'> = { url: '', caption: '', dataAiHint: 'landscape' };
 
 export default function GalleryPage() {
-  const [albums, setAlbums] = useLocalStorage<Album[]>('gallery-albums', []);
-  const [photos, setPhotos] = useLocalStorage<Photo[]>('gallery-photos', []);
+  const { userId, loading: authLoading } = useAuth(); // Get userId
+  const [albums, setAlbums] = useLocalStorage<Album[]>('gallery-albums', [], userId); // Pass userId
+  const [photos, setPhotos] = useLocalStorage<Photo[]>('gallery-photos', [], userId); // Pass userId
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null);
 
   const [isAlbumModalOpen, setIsAlbumModalOpen] = useState(false);
@@ -32,7 +34,11 @@ export default function GalleryPage() {
   const [photoFormData, setPhotoFormData] = useState(initialPhotoFormState);
   
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const canOperate = mounted && !authLoading && !!userId;
 
   // Album Handlers
   const handleAlbumInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -41,6 +47,7 @@ export default function GalleryPage() {
   };
 
   const handleAlbumSubmit = () => {
+    if (!canOperate) return;
     if (albumFormData.name.trim() === '') {
       alert("Album name cannot be empty.");
       return;
@@ -69,18 +76,21 @@ export default function GalleryPage() {
   };
 
   const openEditAlbumModal = (album: Album) => {
+    if (!canOperate) return;
     setEditingAlbum(album);
     setAlbumFormData({ name: album.name, description: album.description || '', coverImageUrl: album.coverImageUrl || '', dataAiHint: album.dataAiHint || 'gallery' });
     setIsAlbumModalOpen(true);
   };
 
   const openAddAlbumModal = () => {
+    if (!canOperate) return;
     setEditingAlbum(null);
     setAlbumFormData(initialAlbumFormState);
     setIsAlbumModalOpen(true);
   };
 
   const handleDeleteAlbum = (id: string) => {
+    if (!canOperate) return;
     if (window.confirm("Are you sure you want to delete this album and all its photos?")) {
       setAlbums(albums.filter((album) => album.id !== id));
       setPhotos(photos.filter((photo) => photo.albumId !== id));
@@ -97,7 +107,7 @@ export default function GalleryPage() {
   };
 
   const handlePhotoSubmit = () => {
-    if (!selectedAlbum) return;
+    if (!canOperate || !selectedAlbum) return;
     if (photoFormData.url.trim() === '') {
       alert("Photo URL cannot be empty.");
       return;
@@ -127,27 +137,29 @@ export default function GalleryPage() {
   };
 
   const openEditPhotoModal = (photo: Photo) => {
+    if (!canOperate) return;
     setEditingPhoto(photo);
     setPhotoFormData({ url: photo.url, caption: photo.caption || '', dataAiHint: photo.dataAiHint || 'photo' });
     setIsPhotoModalOpen(true);
   };
 
   const openAddPhotoModal = () => {
-    if (!selectedAlbum) return;
+    if (!canOperate || !selectedAlbum) return;
     setEditingPhoto(null);
     setPhotoFormData(initialPhotoFormState);
     setIsPhotoModalOpen(true);
   };
 
   const handleDeletePhoto = (id: string) => {
-     if (window.confirm("Are you sure you want to delete this photo?")) {
-        setPhotos(photos.filter((photo) => photo.id !== id));
-     }
+    if (!canOperate) return;
+    if (window.confirm("Are you sure you want to delete this photo?")) {
+      setPhotos(photos.filter((photo) => photo.id !== id));
+    }
   };
 
   const albumPhotos = selectedAlbum ? photos.filter(p => p.albumId === selectedAlbum.id) : [];
 
-  if (!mounted) {
+  if (!mounted || authLoading) {
     return (
       <div className="flex flex-col h-full">
         <AppHeader title="Photo Gallery" />
@@ -158,7 +170,6 @@ export default function GalleryPage() {
     );
   }
 
-
   return (
     <div className="flex flex-col h-full">
       <AppHeader title={selectedAlbum ? `Album: ${selectedAlbum.name}` : "Photo Gallery"}>
@@ -167,12 +178,12 @@ export default function GalleryPage() {
             <Button onClick={() => setSelectedAlbum(null)} variant="outline" size="sm">
               <ArrowLeft className="mr-2 h-4 w-4" /> Back to Albums
             </Button>
-            <Button onClick={openAddPhotoModal} size="sm">
+            <Button onClick={openAddPhotoModal} size="sm" disabled={!canOperate || !selectedAlbum}>
               <PlusCircle className="mr-2 h-4 w-4" /> Add Photo
             </Button>
           </>
         ) : (
-          <Button onClick={openAddAlbumModal} size="sm">
+          <Button onClick={openAddAlbumModal} size="sm" disabled={!canOperate}>
             <PlusCircle className="mr-2 h-4 w-4" /> Create Album
           </Button>
         )}
@@ -181,13 +192,14 @@ export default function GalleryPage() {
       <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
         {!selectedAlbum ? (
           // Albums View
-          albums.length === 0 ? (
+          !canOperate || albums.length === 0 ? (
             <EmptyState
               IconComponent={GalleryIcon}
-              title="No Albums Yet"
-              description="Create albums to organize your photos."
+              title={!canOperate ? "Loading Albums..." : "No Albums Yet"}
+              description={!canOperate ? "Please wait." : "Create albums to organize your photos."}
               actionButtonText="Create Your First Album"
               onActionClick={openAddAlbumModal}
+              actionButtonDisabled={!canOperate}
             />
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -222,13 +234,14 @@ export default function GalleryPage() {
           )
         ) : (
           // Photos in Album View
-          albumPhotos.length === 0 ? (
+          !canOperate || albumPhotos.length === 0 ? ( // Also check canOperate here
             <EmptyState
               IconComponent={Images}
-              title="No Photos in This Album"
-              description="Add photos to start building your collection."
+              title={!canOperate ? "Loading Photos..." : "No Photos in This Album"}
+              description={!canOperate ? "Please wait." : "Add photos to start building your collection."}
               actionButtonText="Add First Photo"
               onActionClick={openAddPhotoModal}
+              actionButtonDisabled={!canOperate || !selectedAlbum}
             />
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

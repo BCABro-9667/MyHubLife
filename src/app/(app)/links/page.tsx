@@ -13,6 +13,7 @@ import AppHeader from '@/components/layout/app-header';
 import { EmptyState } from '@/components/empty-state';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useAuth } from '@/contexts/auth-context'; // Import useAuth
 
 const initialFormState: Omit<WebsiteLink, 'id' | 'createdAt'> = {
   name: '',
@@ -22,13 +23,18 @@ const initialFormState: Omit<WebsiteLink, 'id' | 'createdAt'> = {
 };
 
 export default function LinksPage() {
-  const [links, setLinks] = useLocalStorage<WebsiteLink[]>('links', []);
+  const { userId, loading: authLoading } = useAuth(); // Get userId
+  const [links, setLinks] = useLocalStorage<WebsiteLink[]>('links', [], userId); // Pass userId
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLink, setEditingLink] = useState<WebsiteLink | null>(null);
   const [formData, setFormData] = useState(initialFormState);
 
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
+  const canOperate = mounted && !authLoading && !!userId;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -36,18 +42,17 @@ export default function LinksPage() {
   };
 
   const handleSubmit = () => {
+    if (!canOperate) return;
     if (formData.name.trim() === '' || formData.url.trim() === '') {
       alert("Link name and URL cannot be empty.");
       return;
     }
-    // Basic URL validation
     try {
       new URL(formData.url);
     } catch (_) {
       alert("Please enter a valid URL (e.g., https://example.com).");
       return;
     }
-
 
     if (editingLink) {
       setLinks(
@@ -69,6 +74,7 @@ export default function LinksPage() {
   };
 
   const openEditModal = (link: WebsiteLink) => {
+    if (!canOperate) return;
     setEditingLink(link);
     setFormData({
       name: link.name,
@@ -80,18 +86,20 @@ export default function LinksPage() {
   };
 
   const openAddModal = () => {
+    if (!canOperate) return;
     setEditingLink(null);
     setFormData(initialFormState);
     setIsModalOpen(true);
   };
 
   const handleDeleteLink = (id: string) => {
-     if (window.confirm("Are you sure you want to delete this link?")) {
-        setLinks(links.filter((link) => link.id !== id));
-     }
+    if (!canOperate) return;
+    if (window.confirm("Are you sure you want to delete this link?")) {
+      setLinks(links.filter((link) => link.id !== id));
+    }
   };
 
-  if (!mounted) {
+  if (!mounted || authLoading) {
     return (
       <div className="flex flex-col h-full">
         <AppHeader title="Web Links" />
@@ -105,19 +113,20 @@ export default function LinksPage() {
   return (
     <div className="flex flex-col h-full">
       <AppHeader title="Web Links">
-        <Button onClick={openAddModal} size="sm">
+        <Button onClick={openAddModal} size="sm" disabled={!canOperate}>
           <PlusCircle className="mr-2 h-4 w-4" /> Add Link
         </Button>
       </AppHeader>
 
       <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-        {links.length === 0 ? (
+        {!canOperate || links.length === 0 ? (
           <EmptyState
             IconComponent={LinkIconLucide}
-            title="No Links Saved"
-            description="Organize your favorite or important websites here. Add your first link."
+            title={!canOperate ? "Loading Links..." : "No Links Saved"}
+            description={!canOperate ? "Please wait." : "Organize your favorite or important websites here. Add your first link."}
             actionButtonText="Add Web Link"
             onActionClick={openAddModal}
+            actionButtonDisabled={!canOperate}
           />
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

@@ -16,6 +16,7 @@ import { AISuggestionModal } from '@/components/ai/ai-suggestion-modal';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useAuth } from '@/contexts/auth-context'; // Import useAuth
 
 const initialFormState: Omit<Story, 'id' | 'createdAt'> = {
   title: '',
@@ -25,14 +26,19 @@ const initialFormState: Omit<Story, 'id' | 'createdAt'> = {
 };
 
 export default function StoriesPage() {
-  const [stories, setStories] = useLocalStorage<Story[]>('stories', []);
+  const { userId, loading: authLoading } = useAuth(); // Get userId
+  const [stories, setStories] = useLocalStorage<Story[]>('stories', [], userId); // Pass userId
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingStory, setEditingStory] = useState<Story | null>(null);
   const [formData, setFormData] = useState(initialFormState);
   const [isAISuggestionModalOpen, setIsAISuggestionModalOpen] = useState(false);
 
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const canOperate = mounted && !authLoading && !!userId;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -44,6 +50,7 @@ export default function StoriesPage() {
   };
   
   const handleAddSuggestedStory = (title: string) => {
+    if (!canOperate) return;
     const newStory: Story = {
       id: crypto.randomUUID(),
       title: title,
@@ -55,6 +62,7 @@ export default function StoriesPage() {
   };
 
   const handleSubmit = () => {
+    if (!canOperate) return;
     if (formData.title.trim() === '' || formData.content.trim() === '') {
       alert("Story title and content cannot be empty.");
       return;
@@ -80,6 +88,7 @@ export default function StoriesPage() {
   };
 
   const openEditModal = (story: Story) => {
+    if (!canOperate) return;
     setEditingStory(story);
     setFormData({
       title: story.title,
@@ -91,18 +100,20 @@ export default function StoriesPage() {
   };
 
   const openAddModal = () => {
+    if (!canOperate) return;
     setEditingStory(null);
     setFormData(initialFormState);
     setIsModalOpen(true);
   };
 
   const handleDeleteStory = (id: string) => {
+    if (!canOperate) return;
     if (window.confirm("Are you sure you want to delete this story?")) {
       setStories(stories.filter((story) => story.id !== id));
     }
   };
 
-  if (!mounted) {
+  if (!mounted || authLoading) {
     return (
       <div className="flex flex-col h-full">
         <AppHeader title="My Stories" />
@@ -116,22 +127,23 @@ export default function StoriesPage() {
   return (
     <div className="flex flex-col h-full">
       <AppHeader title="My Stories">
-        <Button onClick={() => setIsAISuggestionModalOpen(true)} variant="outline" size="sm">
+        <Button onClick={() => setIsAISuggestionModalOpen(true)} variant="outline" size="sm" disabled={!canOperate}>
           <Sparkles className="mr-2 h-4 w-4" /> AI Suggest
         </Button>
-        <Button onClick={openAddModal} size="sm">
+        <Button onClick={openAddModal} size="sm" disabled={!canOperate}>
           <PlusCircle className="mr-2 h-4 w-4" /> Add Story
         </Button>
       </AppHeader>
 
       <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-        {stories.length === 0 ? (
+        {!canOperate || stories.length === 0 ? (
           <EmptyState
             IconComponent={BookText}
-            title="No Stories Yet"
-            description="Unleash your creativity. Write down your narratives, ideas, or journal entries. Get started or use AI for inspiration."
+            title={!canOperate ? "Loading Stories..." : "No Stories Yet"}
+            description={!canOperate ? "Please wait." : "Unleash your creativity. Write down your narratives, ideas, or journal entries. Get started or use AI for inspiration."}
             actionButtonText="Add Your First Story"
             onActionClick={openAddModal}
+            actionButtonDisabled={!canOperate}
           />
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

@@ -11,11 +11,13 @@ import { useLocalStorage } from '@/lib/localStorage';
 import { suggestNewEntries, SuggestNewEntriesInput } from '@/ai/flows/suggest-new-entries';
 import type { Todo, Plan, Story, SuggestibleType } from '@/types';
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from '@/contexts/auth-context'; // Import useAuth
 
 export default function AISuggestionsPage() {
-  const [todos, setTodos] = useLocalStorage<Todo[]>('todos', []);
-  const [plans, setPlans] = useLocalStorage<Plan[]>('plans', []);
-  const [stories, setStories] = useLocalStorage<Story[]>('stories', []);
+  const { userId, loading: authLoading } = useAuth(); // Get userId
+  const [todos, setTodos] = useLocalStorage<Todo[]>('todos', [], userId); // Pass userId
+  const [plans, setPlans] = useLocalStorage<Plan[]>('plans', [], userId); // Pass userId
+  const [stories, setStories] = useLocalStorage<Story[]>('stories', [], userId); // Pass userId
 
   const [suggestionType, setSuggestionType] = useState<SuggestibleType>('todo');
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -25,11 +27,19 @@ export default function AISuggestionsPage() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
+  const canOperate = mounted && !authLoading && !!userId;
+
   const getExistingEntriesText = () => {
+    if (!canOperate) return `No existing ${suggestionType}s yet. Suggest some initial ${suggestionType}s.`;
+    
     let existingItems: any[] = [];
     if (suggestionType === 'todo') existingItems = todos;
     else if (suggestionType === 'plan') existingItems = plans;
     else if (suggestionType === 'story') existingItems = stories;
+
+    if (existingItems.length === 0) {
+        return `No existing ${suggestionType}s yet. Suggest some initial ${suggestionType}s.`;
+    }
 
     if (suggestionType === 'todo') {
       return existingItems.map((item: Todo) => item.task).join('\n');
@@ -43,11 +53,15 @@ export default function AISuggestionsPage() {
   };
 
   const handleFetchSuggestions = async () => {
+    if (!canOperate) {
+        toast({ title: "Login Required", description: "Please log in to get AI suggestions.", variant: "destructive" });
+        return;
+    }
     setIsLoading(true);
     setSuggestions([]);
     try {
       const input: SuggestNewEntriesInput = {
-        existingEntries: getExistingEntriesText() || `No existing ${suggestionType}s yet. Suggest some initial ${suggestionType}s.`,
+        existingEntries: getExistingEntriesText(), // This will now include the "no existing entries" message if needed
         type: suggestionType,
       };
       const result = await suggestNewEntries(input);
@@ -64,6 +78,7 @@ export default function AISuggestionsPage() {
   };
 
   const handleAddSuggestion = (suggestionText: string) => {
+    if (!canOperate) return;
     const newItemId = crypto.randomUUID();
     const createdAt = new Date().toISOString();
 
@@ -78,7 +93,7 @@ export default function AISuggestionsPage() {
     setSuggestions(prev => prev.filter(s => s !== suggestionText));
   };
   
-  if (!mounted) {
+  if (!mounted || authLoading) {
     return (
       <div className="flex flex-col h-full">
         <AppHeader title="AI Suggestions" />
@@ -101,7 +116,7 @@ export default function AISuggestionsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col sm:flex-row items-center gap-4">
-            <Select value={suggestionType} onValueChange={(value) => setSuggestionType(value as SuggestibleType)}>
+            <Select value={suggestionType} onValueChange={(value) => setSuggestionType(value as SuggestibleType)} disabled={!canOperate}>
               <SelectTrigger className="w-full sm:w-[200px]">
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
@@ -111,7 +126,7 @@ export default function AISuggestionsPage() {
                 <SelectItem value="story"><BookText className="inline-block mr-2 h-4 w-4" />Stories</SelectItem>
               </SelectContent>
             </Select>
-            <Button onClick={handleFetchSuggestions} disabled={isLoading} className="w-full sm:w-auto">
+            <Button onClick={handleFetchSuggestions} disabled={isLoading || !canOperate} className="w-full sm:w-auto">
               {isLoading ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
@@ -130,7 +145,7 @@ export default function AISuggestionsPage() {
           </div>
         )}
 
-        {!isLoading && suggestions.length > 0 && (
+        {!isLoading && suggestions.length > 0 && canOperate && (
           <div>
             <h2 className="text-xl font-semibold mb-4">Suggested {suggestionType.charAt(0).toUpperCase() + suggestionType.slice(1)}s:</h2>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -148,12 +163,17 @@ export default function AISuggestionsPage() {
           </div>
         )}
 
-        {!isLoading && suggestions.length === 0 && (
+        {!isLoading && suggestions.length === 0 && canOperate && (
           <div className="text-center py-10">
             <p className="text-muted-foreground">
               {isLoading ? 'Loading...' : 'Select a category and click "Generate Suggestions" to see AI-powered ideas here.'}
             </p>
           </div>
+        )}
+        {!canOperate && !isLoading && (
+             <div className="text-center py-10">
+                <p className="text-muted-foreground">Please log in to use AI suggestions.</p>
+            </div>
         )}
       </main>
     </div>
