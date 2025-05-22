@@ -56,9 +56,12 @@ export function AppSidebar() {
 
   const handleLogout = async () => {
     try {
+      // Navigate to home page FIRST
+      router.push('/'); 
+      // Then sign out. This ensures AppLayout unmounts or is no longer relevant
+      // when currentUser becomes null, preventing its redirect logic.
       await signOut(auth);
       toast({ title: "Logged Out", description: "You have been successfully logged out." });
-      router.push('/'); // Redirect to home page
     } catch (error) {
       console.error("Logout failed:", error);
       toast({ title: "Logout Failed", description: "Could not log you out. Please try again.", variant: "destructive" });
