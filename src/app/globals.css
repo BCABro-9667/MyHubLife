@@ -8,98 +8,97 @@ body {
 
 @layer base {
   :root {
-    --background: 120 60% 97%; /* #F0FAF0 */
-    --foreground: 120 10% 25%; /* Darker green for text */
+    --background: 0 0% 100%; /* Pure White */
+    --foreground: 130 50% 20%; /* Dark Green for text */
 
-    --card: 120 60% 99%; 
-    --card-foreground: 120 10% 25%;
+    --card: 0 0% 97%; /* Very light gray/off-white for cards */
+    --card-foreground: 130 50% 20%; /* Dark Green text on cards */
 
-    --popover: 120 60% 99%;
-    --popover-foreground: 120 10% 25%;
+    --popover: 0 0% 97%;
+    --popover-foreground: 130 50% 20%;
 
-    --primary: 108 44% 79%; /* #A7D99D */
-    --primary-foreground: 108 30% 20%; /* Dark green for text on primary */
+    --primary: 130 55% 40%; /* Main Green for buttons, icons */
+    --primary-foreground: 0 0% 100%; /* White text on green buttons */
 
-    --secondary: 108 30% 90%; /* Lighter shade of primary for secondary elements */
-    --secondary-foreground: 108 25% 30%;
+    --secondary: 130 40% 92%; /* Very Light Green for secondary elements */
+    --secondary-foreground: 130 45% 30%; /* Darker Green text on secondary */
 
-    --muted: 108 20% 93%;
-    --muted-foreground: 108 15% 50%;
+    --muted: 130 30% 95%; /* Extremely Light Green for muted backgrounds */
+    --muted-foreground: 130 30% 50%; /* Muted Green text */
 
-    --accent: 76 70% 66%; /* #C7E76A */
-    --accent-foreground: 76 40% 20%; /* Dark green/yellow for text on accent */
+    --accent: 130 60% 50%; /* Brighter Green for accents */
+    --accent-foreground: 0 0% 100%; /* White text on accent */
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 108 30% 88%; /* Light green border */
-    --input: 108 30% 92%; /* Light green input bg */
-    --ring: 108 44% 79%; /* Primary color for ring */
+    --border: 130 30% 88%; /* Light Green border */
+    --input: 0 0% 98%; /* Off-white input bg, rely on border for green hint */
+    --ring: 130 55% 40%; /* Main Green for ring */
 
-    --chart-1: 108 44% 79%;
-    --chart-2: 76 70% 66%;
-    --chart-3: 120 30% 70%;
-    --chart-4: 100 50% 75%;
-    --chart-5: 80 60% 70%;
+    --chart-1: 130 55% 40%;
+    --chart-2: 130 60% 50%;
+    --chart-3: 130 45% 30%;
+    --chart-4: 130 65% 60%;
+    --chart-5: 130 35% 45%;
     
     --radius: 0.5rem;
 
-    /* Sidebar specific colors using the same palette */
-    --sidebar-background: 120 50% 94%; /* A bit darker/more saturated than main bg for contrast */
-    --sidebar-foreground: 120 10% 25%;
-    --sidebar-primary: 76 70% 60%; /* Accent, slightly darker for primary actions */
-    --sidebar-primary-foreground: 76 40% 15%;
-    --sidebar-accent: 108 44% 88%; /* Primary, but lighter for hover/accent state */
-    --sidebar-accent-foreground: 108 30% 25%;
-    --sidebar-border: 108 30% 85%;
-    --sidebar-ring: 76 70% 66%;
+    /* Sidebar specific colors */
+    --sidebar-background: 130 40% 96%; /* Very light green, almost white */
+    --sidebar-foreground: 130 50% 20%; /* Dark Green */
+    --sidebar-primary: 130 55% 40%;    /* Main Green */
+    --sidebar-primary-foreground: 0 0% 100%; /* White */
+    --sidebar-accent: 130 50% 90%;     /* Very light green for hover */
+    --sidebar-accent-foreground: 130 50% 25%; /* Darker green for text on hover */
+    --sidebar-border: 130 40% 88%;     /* Light green border */
+    --sidebar-ring: 130 55% 40%;       /* Main Green */
   }
 
   .dark {
-    /* For dark mode, we can invert or use a different palette if specified.
-       Keeping it relatively simple for now, might need adjustments for perfect aesthetics. */
-    --background: 120 10% 10%;
-    --foreground: 120 30% 90%;
+    --background: 130 15% 10%; /* Very Dark Green */
+    --foreground: 130 30% 90%; /* Light Green/Off-white text */
 
-    --card: 120 10% 12%;
-    --card-foreground: 120 30% 90%;
+    --card: 130 15% 14%; /* Slightly lighter dark green for cards */
+    --card-foreground: 130 30% 90%;
 
-    --popover: 120 10% 12%;
-    --popover-foreground: 120 30% 90%;
+    --popover: 130 15% 12%;
+    --popover-foreground: 130 30% 90%;
 
-    --primary: 108 44% 65%; 
-    --primary-foreground: 108 20% 15%;
+    --primary: 130 50% 55%; /* Brighter Green for dark mode buttons */
+    --primary-foreground: 130 30% 10%; /* Very dark green text for contrast */
 
-    --secondary: 108 30% 25%;
-    --secondary-foreground: 108 30% 85%;
+    --secondary: 130 25% 25%; /* Darker muted green */
+    --secondary-foreground: 130 30% 80%;
 
-    --muted: 108 20% 20%;
-    --muted-foreground: 108 15% 60%;
+    --muted: 130 20% 20%; /* Even darker muted green */
+    --muted-foreground: 130 25% 65%;
 
-    --accent: 76 70% 55%;
-    --accent-foreground: 76 30% 10%;
+    --accent: 130 55% 65%; /* Lighter accent green for dark mode */
+    --accent-foreground: 130 30% 10%;
 
     --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 108 25% 30%;
-    --input: 108 25% 28%;
-    --ring: 108 44% 65%;
+    --border: 130 20% 30%; /* Muted green border */
+    --input: 130 20% 22%; /* Dark green input bg */
+    --ring: 130 50% 55%; /* Brighter Green for ring */
 
-    --chart-1: 108 44% 65%;
-    --chart-2: 76 70% 55%;
-    --chart-3: 120 30% 60%;
-    --chart-4: 100 50% 65%;
-    --chart-5: 80 60% 60%;
+    --chart-1: 130 50% 55%;
+    --chart-2: 130 55% 65%;
+    --chart-3: 130 40% 45%;
+    --chart-4: 130 60% 75%;
+    --chart-5: 130 30% 60%;
 
-    --sidebar-background: 120 10% 15%;
-    --sidebar-foreground: 120 30% 85%;
-    --sidebar-primary: 76 70% 55%;
-    --sidebar-primary-foreground: 76 30% 10%;
-    --sidebar-accent: 108 44% 30%;
-    --sidebar-accent-foreground: 108 30% 85%;
-    --sidebar-border: 108 25% 25%;
-    --sidebar-ring: 76 70% 55%;
+    /* Sidebar specific colors */
+    --sidebar-background: 130 15% 18%; /* Slightly lighter dark green for sidebar */
+    --sidebar-foreground: 130 30% 85%; /* Light Green/Off-white text */
+    --sidebar-primary: 130 50% 55%;    /* Brighter Green */
+    --sidebar-primary-foreground: 130 30% 10%; /* Very dark green text */
+    --sidebar-accent: 130 20% 25%;     /* Muted dark green for hover */
+    --sidebar-accent-foreground: 130 30% 80%; /* Light green text on hover */
+    --sidebar-border: 130 15% 20%;     /* Dark green border */
+    --sidebar-ring: 130 50% 55%;       /* Brighter Green */
   }
 }
 
