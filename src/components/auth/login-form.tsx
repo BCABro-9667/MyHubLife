@@ -104,7 +104,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
         </Button>
       </form>
       
-      <div className="flex items-center">
+      {/* <div className="flex items-center">
         <Separator className="flex-grow" />
         <span className="mx-3 text-xs text-muted-foreground">OR</span>
         <Separator className="flex-grow" />
@@ -117,7 +117,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
         disabled={isLoading || isGoogleLoading}
       >
         {isGoogleLoading ? 'Signing in...' : <><Mail className="mr-2 h-4 w-4" /> Log In with Gmail</>}
-      </Button>
+      </Button> */}
 
       {onSwitchToRegister && (
         <p className="text-center text-xs text-muted-foreground">

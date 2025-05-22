@@ -7,12 +7,15 @@ import Image from 'next/image';
 import { Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import avtar1 from './1.jpg'
+import avtar2 from './2.jpg'
+import avtar3 from './3.jpg'
 
 const testimonials = [
   {
     name: 'Sarah L.',
     role: 'Freelance Writer',
-    avatar: 'https://placehold.co/100x100.png',
+    avatar: {avtar1},
     dataAiHint: 'woman portrait',
     stars: 5,
     testimonial: "MyLifeHub has been a game-changer for my productivity. I can finally keep all my notes, plans, and todos in one place. The AI suggestions are surprisingly helpful!",
@@ -20,7 +23,7 @@ const testimonials = [
   {
     name: 'Mike P.',
     role: 'Software Developer',
-    avatar: 'https://placehold.co/100x100.png',
+    avatar: {avtar2},
     dataAiHint: 'man portrait',
     stars: 5,
     testimonial: "I love having a central dashboard for everything. The password manager (local, but still handy) and web links section are features I use daily. Highly recommend!",
@@ -28,7 +31,7 @@ const testimonials = [
   {
     name: 'Jessica B.',
     role: 'Student',
-    avatar: 'https://placehold.co/100x100.png',
+    avatar: {avtar3},
     dataAiHint: 'person smiling',
     stars: 4,
     testimonial: "Great for organizing my assignments and personal projects. The story writing module is a nice touch for creative breaks. Wish there were more theme options though!",
@@ -36,7 +39,7 @@ const testimonials = [
   {
     name: 'David K.',
     role: 'Small Business Owner',
-    avatar: 'https://placehold.co/100x100.png',
+    avatar: {avtar1},
     dataAiHint: 'professional person',
     stars: 5,
     testimonial: "Finally, an app that's simple yet powerful enough to manage different parts of my life. The plans section helps me stay on track with business goals.",
@@ -44,7 +47,7 @@ const testimonials = [
   {
     name: 'Emily R.',
     role: 'Project Manager',
-    avatar: 'https://placehold.co/100x100.png',
+    avatar: {avtar3},
     dataAiHint: 'professional woman',
     stars: 5,
     testimonial: "The ability to switch between todos, plans, and stories in one interface is fantastic. It's streamlined my workflow significantly.",
@@ -52,7 +55,7 @@ const testimonials = [
    {
     name: 'Alex C.',
     role: 'Photographer',
-    avatar: 'https://placehold.co/100x100.png',
+    avatar: {avtar2},
     dataAiHint: 'artist person',
     stars: 4,
     testimonial: "The gallery feature is great for organizing my photo albums by project. User interface is clean and intuitive!",
