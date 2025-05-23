@@ -7,15 +7,15 @@ import Image from 'next/image';
 import { Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import avtar1 from './1.jpg'
-import avtar2 from './2.jpg'
-import avtar3 from './3.jpg'
+import avtar1 from './1.jpg'; // Assuming these are correct paths to your image assets
+import avtar2 from './2.jpg';
+import avtar3 from './3.jpg';
 
 const testimonials = [
   {
     name: 'Sarah L.',
     role: 'Freelance Writer',
-    avatar: {avtar1},
+    avatar: avtar1, // Correctly assign the imported image
     dataAiHint: 'woman portrait',
     stars: 5,
     testimonial: "MyLifeHub has been a game-changer for my productivity. I can finally keep all my notes, plans, and todos in one place. The AI suggestions are surprisingly helpful!",
@@ -23,7 +23,7 @@ const testimonials = [
   {
     name: 'Mike P.',
     role: 'Software Developer',
-    avatar: {avtar2},
+    avatar: avtar2, // Correctly assign the imported image
     dataAiHint: 'man portrait',
     stars: 5,
     testimonial: "I love having a central dashboard for everything. The password manager (local, but still handy) and web links section are features I use daily. Highly recommend!",
@@ -31,7 +31,7 @@ const testimonials = [
   {
     name: 'Jessica B.',
     role: 'Student',
-    avatar: {avtar3},
+    avatar: avtar3, // Correctly assign the imported image
     dataAiHint: 'person smiling',
     stars: 4,
     testimonial: "Great for organizing my assignments and personal projects. The story writing module is a nice touch for creative breaks. Wish there were more theme options though!",
@@ -39,7 +39,7 @@ const testimonials = [
   {
     name: 'David K.',
     role: 'Small Business Owner',
-    avatar: {avtar1},
+    avatar: avtar1, // Correctly assign the imported image (re-using for example)
     dataAiHint: 'professional person',
     stars: 5,
     testimonial: "Finally, an app that's simple yet powerful enough to manage different parts of my life. The plans section helps me stay on track with business goals.",
@@ -47,7 +47,7 @@ const testimonials = [
   {
     name: 'Emily R.',
     role: 'Project Manager',
-    avatar: {avtar3},
+    avatar: avtar3, // Correctly assign the imported image (re-using for example)
     dataAiHint: 'professional woman',
     stars: 5,
     testimonial: "The ability to switch between todos, plans, and stories in one interface is fantastic. It's streamlined my workflow significantly.",
@@ -55,7 +55,7 @@ const testimonials = [
    {
     name: 'Alex C.',
     role: 'Photographer',
-    avatar: {avtar2},
+    avatar: avtar2, // Correctly assign the imported image (re-using for example)
     dataAiHint: 'artist person',
     stars: 4,
     testimonial: "The gallery feature is great for organizing my photo albums by project. User interface is clean and intuitive!",
@@ -63,6 +63,7 @@ const testimonials = [
 ];
 
 const CARDS_PER_VIEW = 3;
+const DEFAULT_AVATAR_PLACEHOLDER = "https://placehold.co/60x60.png";
 
 export default function TestimonialsSection() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -104,20 +105,18 @@ export default function TestimonialsSection() {
           <div className="overflow-hidden">
             <div
               className="flex transition-transform duration-500 ease-in-out"
-              // This style is not needed when we map over `displayedTestimonials` directly
-              // style={{ transform: `translateX(-${(100 / CARDS_PER_VIEW) * (currentIndex % testimonials.length)}%)` }}
             >
               {displayedTestimonials.map((testimonial, index) => (
                 <div key={index} className={cn("w-full md:w-1/2 lg:w-1/3 flex-shrink-0 p-3 snap-start")}>
                   <Card className="h-full flex flex-col">
                     <CardHeader className="flex flex-row items-center space-x-4">
                       <Image
-                        src={testimonial.avatar}
+                        src={testimonial.avatar || DEFAULT_AVATAR_PLACEHOLDER}
                         alt={testimonial.name}
                         width={60}
                         height={60}
                         className="rounded-full"
-                        data-ai-hint={testimonial.dataAiHint}
+                        data-ai-hint={testimonial.dataAiHint || "person avatar"}
                       />
                       <div>
                         <CardTitle className="text-lg">{testimonial.name}</CardTitle>
