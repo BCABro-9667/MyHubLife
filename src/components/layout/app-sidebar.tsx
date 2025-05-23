@@ -2,11 +2,10 @@
 "use client";
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { signOut } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
-import { useAuth } from '@/contexts/auth-context';
-import { useTheme } from '@/contexts/theme-context'; // Import useTheme
+import { usePathname } from 'next/navigation';
+// signOut and auth from firebase are removed as we are using custom auth
+import { useAuth } from '@/contexts/auth-context'; // Using new custom AuthContext
+import { useTheme } from '@/contexts/theme-context'; 
 import {
   LayoutDashboard,
   ListChecks,
@@ -15,10 +14,10 @@ import {
   CreditCard,
   ClipboardList,
   BookText,
-  Image as ImageIconLucide, // Renamed to avoid conflict with next/image
+  Image as ImageIconLucide, 
   Sparkles,
   LogOut,
-  Sun, Moon, Monitor // Icons for theme toggle
+  Sun, Moon, Monitor 
 } from 'lucide-react';
 import {
   Sidebar,
@@ -31,7 +30,7 @@ import {
 } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { useToast } from "@/hooks/use-toast";
+// useToast is already used in AuthContext for logout message
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 
@@ -49,23 +48,11 @@ const navItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const router = useRouter();
-  const { currentUser } = useAuth();
-  const { theme, setTheme, resolvedTheme } = useTheme();
-  const { toast } = useToast();
+  const { currentUser, logout } = useAuth(); // Get currentUser and logout from new AuthContext
+  const { setTheme, resolvedTheme } = useTheme();
 
-  const handleLogout = async () => {
-    try {
-      // Navigate to home page FIRST
-      router.push('/'); 
-      // Then sign out. This ensures AppLayout unmounts or is no longer relevant
-      // when currentUser becomes null, preventing its redirect logic.
-      await signOut(auth);
-      toast({ title: "Logged Out", description: "You have been successfully logged out." });
-    } catch (error) {
-      console.error("Logout failed:", error);
-      toast({ title: "Logout Failed", description: "Could not log you out. Please try again.", variant: "destructive" });
-    }
+  const handleLogout = () => {
+    logout(); // Call logout from AuthContext
   };
 
   return (

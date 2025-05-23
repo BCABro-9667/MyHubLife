@@ -3,18 +3,16 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { useAuth } from '@/contexts/auth-context'; // Using new custom AuthContext
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { UserPlus, Mail } from 'lucide-react'; // Changed Chrome to Mail
+import { UserPlus } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { Separator } from '@/components/ui/separator';
 
 interface RegisterFormProps {
-  onSuccess?: () => void; // Callback for successful registration
-  onSwitchToLogin?: () => void; // Callback to switch to login modal
+  onSuccess?: () => void;
+  onSwitchToLogin?: () => void;
 }
 
 export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) {
@@ -23,9 +21,10 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  
   const router = useRouter();
   const { toast } = useToast();
+  const { register: contextRegister, loading: authContextLoading } = useAuth(); // Get register function from new context
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,39 +36,18 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
     setError(null);
     setIsLoading(true);
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      await contextRegister(email, password); // Call the register function from AuthContext
       toast({ title: "Registration Successful", description: "Welcome to MyLifeHub!" });
       if (onSuccess) {
         onSuccess();
       } else {
-        router.push('/dashboard');
+        router.push('/dashboard'); // Default redirect after successful registration
       }
     } catch (err: any) {
       setError(err.message || "Failed to register. Please try again.");
       toast({ title: "Registration Failed", description: err.message || "Please try again.", variant: "destructive" });
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleGoogleSignUp = async () => {
-    setError(null);
-    setIsGoogleLoading(true);
-    const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-      toast({ title: "Google Sign-Up Successful", description: "Welcome!" });
-       if (onSuccess) {
-        onSuccess();
-      } else {
-        router.push('/dashboard');
-      }
-    } catch (err: any)
-    {
-      setError(err.message || "Failed to sign up with Google.");
-      toast({ title: "Google Sign-Up Failed", description: err.message || "Please try again.", variant: "destructive" });
-    } finally {
-      setIsGoogleLoading(false);
     }
   };
 
@@ -89,7 +67,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="modal-password-register">Password</Label>
+          <Label htmlFor="modal-password-register">Password (min 6 chars)</Label>
           <Input
             id="modal-password-register"
             type="password"
@@ -113,25 +91,12 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
           />
         </div>
         {error && <p className="text-xs text-destructive text-center">{error}</p>}
-        <Button type="submit" className="w-full h-11" disabled={isLoading || isGoogleLoading}>
-          {isLoading ? 'Creating Account...' : <> <UserPlus className="mr-2 h-4 w-4" /> Sign Up with Email</>}
+        <Button type="submit" className="w-full h-11" disabled={isLoading || authContextLoading}>
+          {isLoading || authContextLoading ? 'Creating Account...' : <> <UserPlus className="mr-2 h-4 w-4" /> Sign Up with Email</>}
         </Button>
       </form>
 
-      <div className="flex items-center">
-        <Separator className="flex-grow" />
-        <span className="mx-3 text-xs text-muted-foreground">OR</span>
-        <Separator className="flex-grow" />
-      </div>
-
-      <Button 
-        variant="outline" 
-        className="w-full h-11" 
-        onClick={handleGoogleSignUp}
-        disabled={isLoading || isGoogleLoading}
-      >
-        {isGoogleLoading ? 'Signing up...' : <><Mail className="mr-2 h-4 w-4" /> Sign Up with Gmail</>}
-      </Button>
+      {/* Google Sign-Up removed */}
 
       {onSwitchToLogin && (
         <p className="text-center text-xs text-muted-foreground">

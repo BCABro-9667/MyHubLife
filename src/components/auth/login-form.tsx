@@ -3,18 +3,16 @@
 
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { useAuth } from '@/contexts/auth-context'; // Using new custom AuthContext
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Sparkles, LogIn, Mail } from 'lucide-react'; // Changed Chrome to Mail
+import { LogIn } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { Separator } from '@/components/ui/separator';
 
 interface LoginFormProps {
-  onSuccess?: () => void; // Callback for successful login
-  onSwitchToRegister?: () => void; // Callback to switch to register modal
+  onSuccess?: () => void;
+  onSwitchToRegister?: () => void;
 }
 
 export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
@@ -22,10 +20,11 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
+  const { login: contextLogin, loading: authContextLoading } = useAuth(); // Get login function from new context
 
   const getRedirectPath = () => {
     return searchParams?.get('redirect') || '/dashboard';
@@ -36,7 +35,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
     setError(null);
     setIsLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await contextLogin(email, password); // Call the login function from AuthContext
       toast({ title: "Login Successful", description: "Welcome back!" });
       if (onSuccess) {
         onSuccess();
@@ -48,26 +47,6 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
       toast({ title: "Login Failed", description: err.message || "Please check your credentials.", variant: "destructive" });
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    setError(null);
-    setIsGoogleLoading(true);
-    const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-      toast({ title: "Google Sign-In Successful", description: "Welcome!" });
-      if (onSuccess) {
-        onSuccess();
-      } else {
-        router.push(getRedirectPath());
-      }
-    } catch (err: any) {
-      setError(err.message || "Failed to sign in with Google.");
-      toast({ title: "Google Sign-In Failed", description: err.message || "Please try again.", variant: "destructive" });
-    } finally {
-      setIsGoogleLoading(false);
     }
   };
 
@@ -99,25 +78,12 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
           />
         </div>
         {error && <p className="text-xs text-destructive text-center">{error}</p>}
-        <Button type="submit" className="w-full h-11" disabled={isLoading || isGoogleLoading}>
-          {isLoading ? 'Logging in...' : <> <LogIn className="mr-2 h-4 w-4" /> Log In with Email</>}
+        <Button type="submit" className="w-full h-11" disabled={isLoading || authContextLoading}>
+          {isLoading || authContextLoading ? 'Logging in...' : <> <LogIn className="mr-2 h-4 w-4" /> Log In with Email</>}
         </Button>
       </form>
       
-      {/* <div className="flex items-center">
-        <Separator className="flex-grow" />
-        <span className="mx-3 text-xs text-muted-foreground">OR</span>
-        <Separator className="flex-grow" />
-      </div>
-
-      <Button 
-        variant="outline" 
-        className="w-full h-11" 
-        onClick={handleGoogleSignIn}
-        disabled={isLoading || isGoogleLoading}
-      >
-        {isGoogleLoading ? 'Signing in...' : <><Mail className="mr-2 h-4 w-4" /> Log In with Gmail</>}
-      </Button> */}
+      {/* Google Sign-In removed as per request to move away from Firebase Auth */}
 
       {onSwitchToRegister && (
         <p className="text-center text-xs text-muted-foreground">

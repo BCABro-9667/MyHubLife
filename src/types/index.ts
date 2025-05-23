@@ -1,5 +1,14 @@
 
 
+export interface User {
+  id: string; // Corresponds to MongoDB's _id
+  email: string;
+  passwordHash?: string; // Only on server, not sent to client
+  createdAt: string;
+  _id?: string; // Optional from MongoDB driver
+}
+
+
 export interface Todo {
   id: string; // Corresponds to MongoDB's _id as a string
   task: string;
@@ -83,4 +92,3 @@ export interface Album {
 // Union type for AI suggestions
 export type SuggestibleContent = Todo | Plan | Story; // Todo and Plan will now come from DB
 export type SuggestibleType = 'todo' | 'plan' | 'story';
-

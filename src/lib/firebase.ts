@@ -1,9 +1,7 @@
 
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+// import { getAuth } from "firebase/auth"; // Firebase Auth is no longer used for core authentication
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -25,5 +23,7 @@ if (!getApps().length) {
   app = getApp();
 }
 
-export const auth = getAuth(app);
+// export const auth = getAuth(app); // Firebase Auth instance is no longer primary for login/register
+// If you plan to use other Firebase services (like Firestore, Storage) you might still need 'app'.
+// If not, this file might become mostly obsolete.
 export default app;
