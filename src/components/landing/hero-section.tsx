@@ -35,7 +35,7 @@ export default function HeroSection() {
               alt="MyLifeHub Dashboard Preview"
               width={600}
               height={400}
-              className="rounded-lg shadow-2xl"
+              // className="rounded-lg shadow-2xl"
               priority
               data-ai-hint="dashboard productivity"
             />
